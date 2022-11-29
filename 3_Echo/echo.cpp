@@ -1,3 +1,4 @@
+//Implement UNIX command echo in C++
 #include <iostream>
 
 int main(int argc, char* argv[])

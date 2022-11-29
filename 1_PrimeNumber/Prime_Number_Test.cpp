@@ -1,3 +1,4 @@
+//Check if the given number is a Prime number. Follow the TDD approach.
 #include <iostream>
 #include <cassert>
 #include "Prime_Number.h"
