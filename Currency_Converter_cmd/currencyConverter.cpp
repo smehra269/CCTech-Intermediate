@@ -1,84 +1,125 @@
-#include <iostream>
-#include <map>
-#include <fstream> // for reading from text file
-#include <sstream> // for parsing lines in text file
+    #include <iostream>
+    #include <fstream>
+    #include <map>
+    #include <vector>
 
-using namespace std;
+    using namespace std;
 
-map<string, double> currencyRates;
-
-// Function to read conversion rates from text file and store in the map
-void readRatesFromFile(string fileName) {
-// Open the text file in input mode
-ifstream file(fileName);
-// Check if the file was successfully opened
-if (!file.is_open()) {
-cout << "Error: Could not open file '" << fileName << "'" << endl;
-return;
-}
-
-// Read each line of the file
-string line;
-while (getline(file, line)) {
-    // Use a stringstream to parse the line
-    stringstream lineStream(line);
-
-    // Read the currency code and rate from the line
+ void ReadConversionRates(map<string, double> &currencyRates, vector<string> &currencies) {
+    ifstream fin("rates.txt");
     string currency;
     double rate;
-    lineStream >> currency >> rate;
-
-    // Store the currency and rate in the map
-    currencyRates[currency] = rate;
+    while (fin >> currency >> rate) {
+        currencyRates[currency] = rate;
+        currencies.push_back(currency);
+    }
+    fin.close();
 }
+
+void PrintCurrencyList(vector<string> &currencies) {
+    for (int i = 0; i < currencies.size(); i++) {
+        cout << i + 1 << ". " << currencies[i] << endl;
+    }
 }
 
-int main(int argc, char* argv[]) {
-    // Check if the correct number of arguments was passed
-    if (argc != 4) {
-        cout << "Usage: currency_converter input_currency output_currency amount" << endl;
-        return 1;
+int GetInputCurrencyIndex(vector<string> &currencies) {
+    int inputCurrency;
+    cin >> inputCurrency;
+    if (!cin || inputCurrency < 1 || inputCurrency > currencies.size()) {
+        cout << "Invalid input. Please enter a valid number." << endl;
+        cin.clear();
+        cin.ignore(10000, '\n');
+        return -1;
     }
+    return inputCurrency - 1;
+}
 
-    // Read the conversion rates from the text file "rates.txt"
-    readRatesFromFile("rates.txt");
-
-    // Get the input and output currencies and the amount from the command line arguments
-    string inputCurrency = argv[1];
-    string outputCurrency = argv[2];
-    double amount = atof(argv[3]);
-
-    // Check if the input currency is valid
-    if (currencyRates.count(inputCurrency) == 0) {
-        cout << "Error: Invalid input currency" << endl;
-        return 1;
+int GetOutputCurrencyIndex(vector<string> &currencies, int inputCurrency) {
+    int outputCurrency;
+    cin >> outputCurrency;
+    if (!cin || outputCurrency < 1 || outputCurrency > currencies.size() || outputCurrency == inputCurrency) {
+        cout << "Invalid input. Please enter a valid number." << endl;
+        cin.clear();
+        cin.ignore(10000, '\n');
+        return -1;
     }
+    return outputCurrency - 1;
+}
 
-    // Check if the output currency is valid
-    if (currencyRates.count(outputCurrency) == 0) {
-        cout << "Error: Invalid output currency" << endl;
-        return 1;
+double GetAmount() {
+    double amount;
+    cin >> amount;
+    if (amount < 0 || amount > 10000) {
+        cout << "Invalid input. Please enter an amount between 0 and 10000." << endl;
+        return -1;
     }
-
-    // Check if the amount is a valid number
-    if (amount <= 0) {
-        cout << "Error: Invalid amount" << endl;
-        return 1;
+    if (!cin) {
+        cout << "Invalid input. Please enter a valid number." << endl;
+        cin.clear();
+        cin.ignore(10000, '\n');
+        return -1;
     }
+    return amount;
+}
 
-    // Check if the amount is within the desired range
-    const double MIN_AMOUNT = 1.0;
-    const double MAX_AMOUNT = 1000000.0;
-    if (amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
-        cout << "Error: Amount must be between " << MIN_AMOUNT << " and " << MAX_AMOUNT << endl;
-        return 1;
+char GetContinueInput() {
+    char continueConversion;
+    cin >> continueConversion;
+    continueConversion = toupper(continueConversion);
+    if (continueConversion != 'Y' && continueConversion != 'N') {
+        cout << "Invalid input. Please enter Y or N." << endl;
+        return 'I';
     }
+    return continueConversion;
+}
 
-    // Calculate the converted amount
-    double convertedAmount = amount * currencyRates[outputCurrency] / currencyRates[inputCurrency];
+int main() {
+    cout << "Welcome to CCTech Currency converter:" << endl;
 
-    // Print the result
-    cout << amount << " " << inputCurrency << " would be " << convertedAmount << " " << outputCurrency << " on 2023-01-06" << endl;
+    // Read conversion rates from the text file
+    map<string, double> currencyRates;
+    vector<string> currencies;
+    ReadConversionRates(currencyRates, currencies);
 
-    return 0;
+    while (true) {
+        cout << "Select the input currency from the list" << endl;
+        PrintCurrencyList(currencies);
+
+        int inputCurrency = GetInputCurrencyIndex(currencies);
+        if (inputCurrency == -1) {
+            continue;
+        }
+        string inputCurrencyCode = currencies[inputCurrency];
+
+        cout << "Select the output currency from the list (should not print the selected input currency at the output)" << endl;
+        for (int i = 0; i < currencies.size(); i++) {
+            if (i != inputCurrency) {
+                cout << i + 1 << ". " << currencies[i] << endl;
+            }
+        }
+
+        int outputCurrency = GetOutputCurrencyIndex(currencies, inputCurrency);
+        if (outputCurrency == -1) {
+            continue;
+        }
+        string outputCurrencyCode = currencies[outputCurrency];
+
+        cout << "Please enter the amount" << endl;
+        double amount = GetAmount();
+        if (amount == -1) {
+            continue;
+        }
+
+        double convertedAmount = amount * currencyRates[outputCurrencyCode] / currencyRates[inputCurrencyCode];
+        cout << amount << " " << inputCurrencyCode << " would be " << convertedAmount << " " << outputCurrencyCode << " on 2023-01-06" << endl;
+
+        cout << "Do you wish to continue with another conversion (Y/N)" << endl;
+        char continueConversion = GetContinueInput();
+        if (continueConversion == 'Y') {
+            continue;
+        }
+        else if (continueConversion == 'N') {
+            break;
+        }
+    }
 }
